@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1e4f0756-f070-4d57-9439-9227c989c631" name="Changes" comment="rename everything to ensure PEP8 compatablity">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="1e4f0756-f070-4d57-9439-9227c989c631" name="Changes" comment="update config and gitignore">
       <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -143,7 +142,15 @@
       <option name="project" value="LOCAL" />
       <updated>1718181919344</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="update config and gitignore">
+      <option name="closed" value="true" />
+      <created>1718187282336</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1718187282336</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -173,6 +180,7 @@
     <MESSAGE value="License changes and toml file updated" />
     <MESSAGE value="refactor" />
     <MESSAGE value="rename everything to ensure PEP8 compatablity" />
-    <option name="LAST_COMMIT_MESSAGE" value="rename everything to ensure PEP8 compatablity" />
+    <MESSAGE value="update config and gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="update config and gitignore" />
   </component>
 </project>
