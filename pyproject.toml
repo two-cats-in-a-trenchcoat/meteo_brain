@@ -1,6 +1,6 @@
 [project]
 name = "meteo_brain"
-version = "0.0.1"
+version = "0.1.0-a.1"
 authors = [
   { name="Alfred George Taylor", email="alfredgtaylor@gmail.com" },
 ]
