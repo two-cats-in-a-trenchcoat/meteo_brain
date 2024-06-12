@@ -2,3 +2,4 @@
 /src/meteo_brain.egg-info/
 /.idea/
 /.venv/
+/tests/test_db/
