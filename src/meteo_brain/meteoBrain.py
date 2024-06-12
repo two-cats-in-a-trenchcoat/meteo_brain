@@ -1,4 +1,4 @@
-#  meteoBrain Weather predict.
+#  meteo_brain Weather prediction.
 #  Copyright (C) 2024  Alfred Taylor
 #
 #  This program is free software: you can redistribute it and/or modify
