@@ -7,10 +7,7 @@ authors = [
 description = "Adaptive weather prediction algorithm with data collection."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
-    "typing",
-    "math"
-]
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
