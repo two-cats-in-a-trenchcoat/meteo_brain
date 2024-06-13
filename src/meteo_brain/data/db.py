@@ -73,4 +73,3 @@ class DataBase:
         return
 
 
-DataBase("D:\\CompSciNEA\\meteo_brain\\tests\\test_db\\").open()
