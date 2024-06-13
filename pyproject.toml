@@ -14,7 +14,9 @@ classifiers = [
     "Operating System :: OS Independent",
     "Development Status :: 1 - Planning"
 ]
-
+dependencies = [
+    "numpy"
+]
 [project.urls]
 Homepage = "https://github.com/two-cats-in-a-trenchcoat/meteoBrain"
 Issues = "https://github.com/two-cats-in-a-trenchcoat/meteoBrain/issues"
