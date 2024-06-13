@@ -15,7 +15,7 @@ classifiers = [
     "Development Status :: 1 - Planning"
 ]
 dependencies = [
-    "numpy"
+    "pandas"
 ]
 [project.urls]
 Homepage = "https://github.com/two-cats-in-a-trenchcoat/meteoBrain"
