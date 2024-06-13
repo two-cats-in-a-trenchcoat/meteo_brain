@@ -71,7 +71,7 @@ class DataBase:
         try:
             with open(f"{self.source}/db_config.json", "r+") as c:
                 config = json.load(c)
-                self.__currentFolder = config["last_folder"]  # setting the globals (I hate globals)
+                self.__currentFolder = config["last_folder"]  # update private variables
                 self.__currentFile = config["last_file"]
                 return config
 
@@ -81,7 +81,7 @@ class DataBase:
     def set_conf(self, content: dict) -> None:  # setter function for the config file
         try:
             with open(f"{self.source}/db_config.json", "w+") as c:
-                self.__currentFolder = content["last_folder"]  # setting the globals (I hate globals)
+                self.__currentFolder = content["last_folder"]  # update private variables
                 self.__currentFile = content["last_file"]
                 c.truncate(0)
                 json.dump(content, c, indent=3)
