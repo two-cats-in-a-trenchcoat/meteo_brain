@@ -41,8 +41,8 @@ SECONDS_IN_A_DAY: int = 86400
 
 
 class DataBase:
-    __currentFolder = ""
-    __currentFile = ""
+    __currentFolder: str = ""
+    __currentFile: str = ""
 
     def __init__(self, source: str, sensor_labels: list) -> None:  # database checks it exists on init
         self.source = source
@@ -70,17 +70,17 @@ class DataBase:
             json.dump(EMPTY_CONFIG, c, indent=3)
 
     def __fs_init(self) -> None:  # same functionality as fs_check but allows for an empty patch
-        year = time.strftime("%Y")
-        month = time.strftime("%b").lower()  # string month names for easy reading
+        year: str = time.strftime("%Y")
+        month: str = time.strftime("%b").lower()  # string month names for easy reading
 
-        path = f"{self.source}/{year}/{month}/"  # potentially add folders for day of month too?
+        path: str = f"{self.source}/{year}/{month}/"  # potentially add folders for day of month too?
 
         try:
             os.makedirs(path)
         except FileExistsError:
             pass
 
-        f_name = f"{int(time.time())}-{time.strftime('%a-%d')}.csv"
+        f_name: str = f"{int(time.time())}-{time.strftime('%a-%d')}.csv"
         open(f"{path}{f_name}", "a").close()  # why cant python have a nicer looking way to make files
 
         config = self.get_conf()
@@ -90,17 +90,17 @@ class DataBase:
 
     def __fs_check(self) -> None:  #
         self.get_conf()
-        year = time.strftime("%Y")
-        month = time.strftime("%b").lower()
+        year: str = time.strftime("%Y")
+        month: str = time.strftime("%b").lower()
 
-        path_keys = self.__currentFolder.replace("\\", "/").replace("//", "/").split("/")
+        path_keys: list = self.__currentFolder.replace("\\", "/").replace("//", "/").split("/")
         while "" in path_keys:
             path_keys.remove("")
 
-        file_dc = self.__currentFile.split("-")[0]
+        file_dc: str = self.__currentFile.split("-")[0]
 
         if path_keys[-1] != month or not os.path.exists(self.__currentFolder):
-            path = f"{self.source}/{year}/{month}/"
+            path: str = f"{self.source}/{year}/{month}/"
             os.makedirs(path)
             config = self.get_conf()
             f_name = self.__gen_file()
@@ -117,7 +117,7 @@ class DataBase:
 
     def __gen_file(self) -> str:  # generate files as time changes
         path = self.__currentFolder
-        f_name = f"{int(time.time())}-{time.strftime('%a-%d')}.csv"
+        f_name: str = f"{int(time.time())}-{time.strftime('%a-%d')}.csv"
         self.empty_data_frame.to_csv(f"{path}{f_name}", sep=",", index=True)
         return f_name
 
@@ -154,10 +154,10 @@ class DataBase:
         self.__fs_check()  # best practice call __fs_check before directly manipulating the database
 
         if filepath is None:  # cannot accept self as a default argument so this check has to be made
-            filepath = f"{self.__currentFolder}{self.__currentFile}"
+            filepath: str = f"{self.__currentFolder}{self.__currentFile}"
 
         try:
-            data = pd.read_csv(filepath, sep=",", header=0, index_col=0)
+            data: pd.DataFrame = pd.read_csv(filepath, sep=",", header=0, index_col=0)
 
         except (pd.errors.EmptyDataError, FileNotFoundError) as e:
             raise DBError(f"database file {self.__currentFile} invalid: {e}")
@@ -170,7 +170,7 @@ class DataBase:
 
         # non-discerning search algorithm, will search every file in database, room for speed improvements here
         for root, dirs, files in os.walk(self.source):
-            file_split = [x.split("-")[0] for x in files]
+            file_split: list = [x.split("-")[0] for x in files]
 
             for i, j in enumerate(file_split):
                 try:
@@ -186,7 +186,7 @@ class DataBase:
         self.__fs_check()  # best practice call __fs_check before directly manipulating the database
 
         # load file as DataFrame, modify dataframe, wipe file and then re-write.
-        to_append = self.fetch_current()
+        to_append: pd.DataFrame = self.fetch_current()
 
         if data.columns.empty:
             data.columns = self.labels
@@ -200,7 +200,7 @@ class DataBase:
         data.to_csv(f"{self.__currentFolder}{self.__currentFile}", mode="w")
 
     def display(self, dataset: pd.DataFrame) -> None:  # display current db file as html
-        url = f"{self.source}/tmp.html"
+        url: str = f"{self.source}/tmp.html"
         dataset.to_html(url)
         webbrowser.open(url)
         os.remove(url)
