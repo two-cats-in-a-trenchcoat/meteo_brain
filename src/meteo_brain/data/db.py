@@ -1,4 +1,4 @@
-# meteo_brain Weather prediction.
+# database manager for meteo_brain
 # Copyright (C) 2024  Alfred Taylor
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,6 @@ import time
 import webbrowser
 from typing import *
 
-# pd is by itself because it is a naughty dependency that takes ages to initialise
 import pandas as pd
 
 
@@ -29,7 +28,7 @@ class DBError(Exception):  # custom exception class to make error checking easie
     pass
 
 
-EMPTY_CONFIG: dict = {  # maybe this should be within DataBase's scope
+EMPTY_CONFIG: dict = {  # maybe this should be within DataBase's scope but doing that breaks it somehow
     "date_of_creation": time.time(),
     "last_accessed": time.time(),
     "access_count": 0,
@@ -37,17 +36,43 @@ EMPTY_CONFIG: dict = {  # maybe this should be within DataBase's scope
     "last_file": ""
 }
 
-SECONDS_IN_A_DAY: int = 86400
+SECONDS_IN_A_DAY: int = 86400  # used when updating file names within db
 
 
 class DataBase:
-    __currentFolder: str = ""
-    __currentFile: str = ""
+    """Object to represent the database.
 
-    def __init__(self, source: str, sensor_labels: list) -> None:  # database checks it exists on init
+    Interface with data structure through functions. Functionality for automated file structure management and repair of
+    damage to database. Has search functions too.
+
+    Attributes:
+        source: str
+            Location of preexisting database folder or folder to create database in.
+        data_type_labels: list
+            Labels for data when fetching and appending.
+
+    Methods (public):
+        get_conf():
+            Returns settings contained within conf file as dict.
+            Will raise a DBError if db_config.json is corrupt.
+        set_conf(content: dict):
+            Allows for manual manipulation of db_config.json within the database structure.
+            Ensure that content is properly formatted, perhaps inherit from get_conf.
+        fetch_current(filepath=None):
+            Returns the values of the current db file as a pandas dataframe.
+            Optionally, filepath can be specified to read from older files.
+        fetch_historic(day_moth_year: tuple):
+            Accepts a three entry tuple which contains an integer date.
+            The database will be searched for a file on this date.
+            Will raise FileNotFoundError if no file found at date specified.
+        """
+    __current_folder: str = ""
+    __current_file: str = ""
+
+    def __init__(self, source: str, data_type_labels: list) -> None:  # database checks it exists on init
         self.source = source
-        self.empty_data_frame = pd.DataFrame(columns=sensor_labels)
-        self.labels = sensor_labels
+        self.empty_data_frame = pd.DataFrame(columns=data_type_labels)
+        self.labels = data_type_labels
 
         if not os.path.exists(f"{source}/db_config.json") or len(os.listdir(source)) <= 0:
             self.__db_init()
@@ -57,28 +82,26 @@ class DataBase:
         config["access_count"] += 1
         self.set_conf(config)
 
-        if self.__currentFolder == "" or self.__currentFile == "":  # only should run after __db_init has been run once
+        if self.__current_folder == "" or self.__current_file == "":  # only should run after __db_init has been run
             self.__fs_init()
 
-    def __db_init(self) -> None:  # create conf file without adding any subfolders yet
-        try:
+    def __db_init(self) -> None:
+        """Create conf file without db file structure."""
+        if not os.path.exists(self.source):
             os.mkdir(self.source)
-        except FileExistsError:
-            pass
 
         with open(f"{self.source}/db_config.json", "w") as c:
             json.dump(EMPTY_CONFIG, c, indent=3)
 
-    def __fs_init(self) -> None:  # same functionality as fs_check but allows for an empty patch
+    def __fs_init(self) -> None:
+        """create full db structure and update conf file"""
         year: str = time.strftime("%Y")
         month: str = time.strftime("%b").lower()  # string month names for easy reading
 
         path: str = f"{self.source}/{year}/{month}/"  # potentially add folders for day of month too?
 
-        try:
+        if not os.path.exists(path):
             os.makedirs(path)
-        except FileExistsError:
-            pass
 
         f_name: str = f"{int(time.time())}-{time.strftime('%a-%d')}.csv"
         open(f"{path}{f_name}", "a").close()  # why cant python have a nicer looking way to make files
@@ -88,18 +111,18 @@ class DataBase:
         config["last_file"] = f_name
         self.set_conf(config)
 
-    def __fs_check(self) -> None:  #
+    def __fs_check(self) -> None:
+        """Function to check validity of currently initialised db, functionality for regenerating damage to db."""
         self.get_conf()
         year: str = time.strftime("%Y")
         month: str = time.strftime("%b").lower()
-
-        path_keys: list = self.__currentFolder.replace("\\", "/").replace("//", "/").split("/")
+        path_keys: list = self.__current_folder.replace("\\", "/").replace("//", "/").split("/")
         while "" in path_keys:
             path_keys.remove("")
 
-        file_dc: str = self.__currentFile.split("-")[0]
+        file_dc: str = self.__current_file.split("-")[0]
 
-        if path_keys[-1] != month or not os.path.exists(self.__currentFolder):
+        if path_keys[-1] != month and not os.path.exists(self.__current_folder):
             path: str = f"{self.source}/{year}/{month}/"
             os.makedirs(path)
             config = self.get_conf()
@@ -108,79 +131,113 @@ class DataBase:
             config["last_file"] = f_name
             self.set_conf(config)
 
-        if not os.path.exists(f"{self.__currentFolder}{self.__currentFile}") or abs(
+        if not os.path.exists(f"{self.__current_folder}{self.__current_file}") or abs(
                 (int(file_dc) - int(time.time()))) >= SECONDS_IN_A_DAY:
             config = self.get_conf()
             f_name = self.__gen_file()
             config["last_file"] = f_name
             self.set_conf(config)
 
-    def __gen_file(self) -> str:  # generate files as time changes
-        path = self.__currentFolder
+    def __gen_file(self) -> str:
+        """Returns location of most recent file to be edited, if out of date creates new file."""
+        path = self.__current_folder
         f_name: str = f"{int(time.time())}-{time.strftime('%a-%d')}.csv"
         self.empty_data_frame.to_csv(f"{path}{f_name}", sep=",", index=True)
         return f_name
 
-    def get_conf(self) -> dict:  # getter function for the config file
-        # __fs_check calls get_conf, so it cannot be used here.
+    def get_conf(self) -> dict:
+        """Getter for config data from config.json.
+
+            Returns:
+                Dict object that contains the contents of the JSON.
+            Custom Exceptions:
+                Will raise DBError if the config file is corrupt or poorly formatted.
+            """
+        # don't use __fs_check since it calls get_conf, so it cannot be used here.
 
         try:
             with open(f"{self.source}/db_config.json", "r+") as c:
                 config = json.load(c)
-                self.__currentFolder = config["last_folder"]  # update private variables
-                self.__currentFile = config["last_file"]
+                self.__current_folder = config["last_folder"]  # update private variables
+                self.__current_file = config["last_file"]
                 return config
 
         except (FileNotFoundError, json.JSONDecodeError) as e:
             raise DBError(f"cannot load config: {e} ")
 
-    def set_conf(self, content: dict) -> None:  # setter function for the config file
-        self.__fs_check()  # best practice call __fs_check before directly manipulating the database
+    def set_conf(self, content: dict) -> None:
+        """allows manipulation of the db_config.json file. Updates internal private variables.
+
+        Parameters:
+            content: dict
+                formatted dict containing the new values of the conf file
+        Custom Exceptions:
+            Will raise DBError if db_config.json does not exist.
+        """
+
+        # fs_check used to be here for some reason, DO NOT CALL fs_check within this scope!
 
         try:
             with open(f"{self.source}/db_config.json", "w+") as c:
-                # reformat path to be POSIX compliant
+                # reformat path to be more POSIX compliant
                 content["last_folder"] = content["last_folder"].replace("\\", "/").replace("//", "/")
-                self.__currentFolder = content["last_folder"]  # update private variables
-                self.__currentFile = content["last_file"]
+                self.__current_folder = content["last_folder"]  # update private variables
+                self.__current_file = content["last_file"]
                 c.truncate(0)  # clear file
                 json.dump(content, c, indent=3)
 
         except (FileNotFoundError, json.JSONDecodeError) as e:
             raise DBError(f"cannot load config: {e}")
 
-    # with large file sizes running this function often is ill-advised, it eats ram. Perhaps cache values before commit?
+    # with large file sizes running this function often is ill-advised, it eats ram. (to fix)
     def fetch_current(self, filepath=None) -> pd.DataFrame:
+        """will fetch all the values of the current file that is being edited.
+
+        Warning: will return a HUGE array if file is large.
+
+        Parameters:
+            filepath: str
+                Optional specifier for specific file to get data from, by default will access most recent file.
+        Returns:
+            Pandas dataframe containing file data with column names inherited from self.source and timestamped rows.
+
+        """
+
         self.__fs_check()  # best practice call __fs_check before directly manipulating the database
 
-        if filepath is None:  # cannot accept self as a default argument so this check has to be made
-            filepath: str = f"{self.__currentFolder}{self.__currentFile}"
+        if not filepath:  # cannot accept self as a default argument so this check has to be made
+            filepath: str = f"{self.__current_folder}{self.__current_file}"
 
         try:
             data: pd.DataFrame = pd.read_csv(filepath, sep=",", header=0, index_col=0)
 
         except (pd.errors.EmptyDataError, FileNotFoundError) as e:
-            raise DBError(f"database file {self.__currentFile} invalid: {e}")
+            raise DBError(f"database file {self.__current_file} invalid: {e}")
 
         return data
 
     # this func is the same as fetch() but slower...
     def fetch_historic(self, day_month_year: Tuple[int, int, int]) -> Optional[pd.DataFrame]:
+        """
+        
+        """
         self.__fs_check()  # best practice call __fs_check before directly manipulating the database
 
         # non-discerning search algorithm, will search every file in database, room for speed improvements here
         for root, dirs, files in os.walk(self.source):
             file_split: list = [x.split("-")[0] for x in files]
 
-            for i, j in enumerate(file_split):
+            for i, j in enumerate(file_split):  # absolutely horrible excuse for a search algorithm
                 try:
                     # see if there is a better way to do this
                     if (time.localtime(int(j)).tm_mday == day_month_year[0] and
                             time.localtime(int(j)).tm_mon == day_month_year[1] and
                             time.localtime(int(j)).tm_year == day_month_year[2]):
                         return self.fetch_current(os.path.join(root, files[i]))
-                except ValueError:  # this is also scuffed as fuck
+                except ValueError:  # this is also scuffed as fuck >:(
                     pass
+
+            raise FileNotFoundError("No file at date given.")  # may be better to return a flag instead of raising FNFE
 
     def commit_frame(self, data: pd.DataFrame) -> None:  # append multiple entries in the form of a dataframe
         self.__fs_check()  # best practice call __fs_check before directly manipulating the database
@@ -191,13 +248,13 @@ class DataBase:
         if data.columns.empty:
             data.columns = self.labels
 
-        open(f"{self.__currentFolder}{self.__currentFile}", "w").close()  # why, python, WHY!!!
+        open(f"{self.__current_folder}{self.__current_file}", "w").close()  # why, python, WHY!!!
 
         # merge the two DataFrames along their columns, if both share indexes this may cause issues
         if not to_append.empty:
             data = pd.concat([to_append, data])
 
-        data.to_csv(f"{self.__currentFolder}{self.__currentFile}", mode="w")
+        data.to_csv(f"{self.__current_folder}{self.__current_file}", mode="w")
 
     def display(self, dataset: pd.DataFrame) -> None:  # display current db file as html
         url: str = f"{self.source}/tmp.html"
@@ -212,6 +269,6 @@ class DataBase:
         data = self.fetch_current()
         data.loc[len(data)] = data_item
 
-        open(f"{self.__currentFolder}{self.__currentFile}", "w").close()  # why, python, WHY!!!
+        open(f"{self.__current_folder}{self.__current_file}", "w").close()  # this is such a wierd way to create a file
 
-        data.to_csv(f"{self.__currentFolder}{self.__currentFile}", mode="w")
+        data.to_csv(f"{self.__current_folder}{self.__current_file}", mode="w")
