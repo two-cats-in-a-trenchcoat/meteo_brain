@@ -51,4 +51,4 @@ inputfetcher = InputDaemon(myDB)
 
 cert = "D:\\CompSciNEA\\meteo_brain\\tests\\hcc.pem"
 
-print(DefualtMethods.open_weather_map_API("54208e319a42531e68aa76aa3de4f0b0", "50.97", "0.26", cert))
+print(DefualtMethods.open_weather_map_API("", "50.97", "0.26", cert))
