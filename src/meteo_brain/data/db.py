@@ -202,6 +202,7 @@ class DataBase:
             Pandas dataframe containing file data with column names inherited from self.source and timestamped rows.
 
         """
+        # could there possibly be a way of only loading part of a file into ram?
 
         self.__fs_check()  # best practice call __fs_check before directly manipulating the database
 
@@ -216,14 +217,14 @@ class DataBase:
 
         return data
 
-    # this func is the same as fetch() but slower...
+    # fetch() but worse in every way
     def fetch_historic(self, day_month_year: Tuple[int, int, int]) -> Optional[pd.DataFrame]:
-        """
-        
+        """Search 
         """
         self.__fs_check()  # best practice call __fs_check before directly manipulating the database
 
         # non-discerning search algorithm, will search every file in database, room for speed improvements here
+        # good place to implement binary search I think if I sort the date codes properly
         for root, dirs, files in os.walk(self.source):
             file_split: list = [x.split("-")[0] for x in files]
 
@@ -234,7 +235,7 @@ class DataBase:
                             time.localtime(int(j)).tm_mon == day_month_year[1] and
                             time.localtime(int(j)).tm_year == day_month_year[2]):
                         return self.fetch_current(os.path.join(root, files[i]))
-                except ValueError:  # this is also scuffed as fuck >:(
+                except ValueError:  # this is also scuffed af >:(
                     pass
 
             raise FileNotFoundError("No file at date given.")  # may be better to return a flag instead of raising FNFE

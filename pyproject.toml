@@ -15,7 +15,8 @@ classifiers = [
     "Development Status :: 1 - Planning"
 ]
 dependencies = [
-    "pandas"
+    "pandas",
+    "requests"
 ]
 [project.urls]
 Homepage = "https://github.com/two-cats-in-a-trenchcoat/meteoBrain"
